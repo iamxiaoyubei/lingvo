@@ -1,6 +1,6 @@
 # Run the following commands in order:
 #
-# LINGVO_DIR="/home/dm/Documents/codes/lingvo"  # (change to the cloned lingvo directory, e.g. "$HOME/lingvo")
+# LINGVO_DIR="/data/xiaoyubei/codes/lingvo"  # (change to the cloned lingvo directory, e.g. "$HOME/lingvo")
 # LINGVO_DEVICE="gpu"  # (Leave empty to build and run CPU only docker)
 # sudo docker build --tag tensorflow:lingvo $(test "$LINGVO_DEVICE" = "gpu" && echo "--build-arg base_image=nvidia/cuda:10.0-cudnn7-runtime-ubuntu16.04") - < lingvo/docker/dev.dockerfile
 # sudo docker run --rm $(test "$LINGVO_DEVICE" = "gpu" && echo "--runtime=nvidia") -it -v ${LINGVO_DIR}:/tmp/lingvo -v ${HOME}/.gitconfig:/home/${USER}/.gitconfig:ro -p 6006:6006 -p 8888:8888 --name lingvo tensorflow:lingvo bash
@@ -16,6 +16,10 @@ LABEL maintainer="Patrick Nguyen <drpng@google.com>"
 # instruction after a FROM.
 ARG cpu_base_image="ubuntu:16.04"
 ARG base_image=$cpu_base_image
+
+# fix apt-utils error
+RUN apt-get update && apt-get install -y --no-install-recommends apt-utils
+
 
 # Pick up some TF dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -93,6 +97,6 @@ EXPOSE 6006
 # Jupyter
 EXPOSE 8888
 
-WORKDIR "/tmp/lingvo"
+WORKDIR "/data/xiaoyubei/codes/lingvo"
 
 CMD ["/bin/bash"]
