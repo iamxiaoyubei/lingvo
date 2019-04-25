@@ -14,11 +14,11 @@
 # limitations under the License.
 # ==============================================================================
 
-ROOT=/tmp/librispeech
+ROOT=/data/xiaoyubei/datasets/librispeech
 
 # From:
 # http://www.openslr.org/12/
-SOURCE=http://www.openslr.org/resources/12
+# SOURCE=http://www.openslr.org/resources/12
 
 # If in China, use this mirror:
-# http://cn-mirror.openslr.org/resources/12
+SOURCE=http://cn-mirror.openslr.org/resources/12
