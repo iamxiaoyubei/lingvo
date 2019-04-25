@@ -97,6 +97,6 @@ EXPOSE 6006
 # Jupyter
 EXPOSE 8888
 
-WORKDIR "/data/xiaoyubei/codes/lingvo"
+WORKDIR "/tmp/lingvo"
 
 CMD ["/bin/bash"]
