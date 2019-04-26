@@ -1,6 +1,6 @@
 # Lingvo实验进展
 ## 环境配置
-使用docker进行环境配置，首先需要安装好Docker CE以及nvidia-docker2:
+使用docker进行环境配置，首先需要安装好Docker CE以及nvidia-docker2（不安装nvidia-docker2会报错`docker: Error response from daemon: Unknown runtime specified nvidia`）:
 - https://docs.docker.com/install/linux/docker-ce/ubuntu/
 - https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0)
 
@@ -150,23 +150,66 @@ FILE: /home/dm/Documents/datasets/librispeech/raw/train-clean-360.tar.gz
 [#ca61a0 20MiB/28GiB(0%) CN:16 DL:375KiB ETA:22h4m26s]
 FILE: /home/dm/Documents/datasets/librispeech/raw/train-other-500.tar.gz
 ------------------------------------------------------------------------------------------------------
-
- *** Download Progress Summary as of Wed Apr 24 15:26:24 2019 ***                                     
-======================================================================================================
-[#7c4ac8 39MiB/5.9GiB(0%) CN:16 DL:410KiB ETA:4h11m37s]
-FILE: /home/dm/Documents/datasets/librispeech/raw/train-clean-100.tar.gz
-------------------------------------------------------------------------------------------------------
-[#7f1e27 47MiB/21GiB(0%) CN:16 DL:394KiB ETA:15h49m41s]
-FILE: /home/dm/Documents/datasets/librispeech/raw/train-clean-360.tar.gz
-------------------------------------------------------------------------------------------------------
-[#ca61a0 41MiB/28GiB(0%) CN:16 DL:321KiB ETA:25h48m23s]
-FILE: /home/dm/Documents/datasets/librispeech/raw/train-other-500.tar.gz
-------------------------------------------------------------------------------------------------------
-
-......
 ```
 需等待许久，同时下载devtest数据:
 ```
 sh ./lingvo/tasks/asr/tools/librispeech.02.download_devtest.sh
 ```
 实测用迅雷下载更快
+
+### 处理数据集
+记得挂载数据集的位置到docker的相应位置（/tmp/librispeech），否则是无法通过本机绝对路径找到数据集的。其次记得bazel build相应的处理文件（create_asr_features），可以CTRL+F寻找相应文件的bazel name
+```
+LIBRISPEECH_DIR="/data/xiaoyubei/datasets/librispeech"
+sudo docker run --rm $(test "$LINGVO_DEVICE" = "gpu" && echo "--runtime=nvidia") -it -v ${LINGVO_DIR}:/tmp/lingvo -v ${LIBRISPEECH_DIR}:/tmp/librispeech -v ${HOME}/.gitconfig:/home/${USER}/.gitconfig:ro -p 6006:6006 -p 8888:8888 --name lingvo tensorflow:lingvo bash
+
+bazel build -c opt //lingvo/tools:create_asr_features
+sh ./lingvo/tasks/asr/tools/librispeech.03.parameterize_train.sh
+... takes about 2h ...
+sh ./lingvo/tasks/asr/tools/librispeech.04.parameterize_devtest.sh
+... takes about 30min ...
+```
+处理结束会生成110.6GB的train文件和2.4GB的devtest文件
+
+
+## 开始训练
+```
+root@d4bff1951ef0:/tmp/lingvo# bazel build -c opt //lingvo:trainer
+Starting local Bazel server and connecting to it...
+INFO: Analysed target //lingvo:trainer (37 packages loaded, 4708 targets configured).
+INFO: Found 1 target...
+Target //lingvo:trainer up-to-date:
+  bazel-bin/lingvo/trainer
+INFO: Elapsed time: 4.297s, Critical Path: 0.19s
+INFO: 1 process: 1 processwrapper-sandbox.
+INFO: Build completed successfully, 5 total actions
+root@d4bff1951ef0:/tmp/lingvo# 
+```
+目前出现了Memcpy failed/CUDNN_STATUS_INTERNAL_ERROR情况：
+```
+bazel-bin/lingvo/trainer --run_locally=gpu --mode=sync --model=asr.librispeech.Librispeech960Grapheme --logdir=/tmp/librispeech/log --logtostderr --enable_asserts=false
+
+I0425 13:03:42.883239 139972916016896 trainer.py:270] Save checkpoint done: /tmp/librispeech/log/train/ckpt-00000000
+2019-04-25 13:03:42.920659: I tensorflow/stream_executor/stream.cc:1852] [stream=0x77b6df0,impl=0x77b6e90] did not wait for [stream=0x77b6750,impl=0x77b67f0]
+2019-04-25 13:03:42.927286: I tensorflow/stream_executor/stream.cc:1852] [stream=0x77b6df0,impl=0x77b6e90] did not wait for [stream=0x77b6750,impl=0x77b67f0]
+2019-04-25 13:03:42.927843: I tensorflow/stream_executor/stream.cc:4800] [stream=0x77b6df0,impl=0x77b6e90] did not memcpy host-to-device; source: 0x7f4e2ce4ecc0
+2019-04-25 13:03:42.927929: F tensorflow/core/common_runtime/gpu/gpu_util.cc:339] CPU->GPU Memcpy failed
+Aborted (core dumped)
+...
+2019-04-26 02:29:47.176376: I lingvo/core/ops/record_yielder.cc:341] Epoch 1 /tmp/librispeech/train/train.tfrecords-*
+2019-04-26 02:30:42.692324: I tensorflow/stream_executor/platform/default/dso_loader.cc:43] Successfully opened dynamic library libcudnn.so.7
+2019-04-26 02:30:51.931265: E tensorflow/stream_executor/cuda/cuda_dnn.cc:329] Could not create cudnn handle: CUDNN_STATUS_INTERNAL_ERROR
+2019-04-26 02:30:51.970948: W ./tensorflow/stream_executor/stream.h:1988] attempting to perform DNN operation using StreamExecutor without DNN support
+2019-04-26 02:30:52.362986: E tensorflow/stream_executor/cuda/cuda_dnn.cc:329] Could not create cudnn handle: CUDNN_STATUS_INTERNAL_ERROR
+2019-04-26 02:30:52.494345: E tensorflow/stream_executor/cuda/cuda_dnn.cc:329] Could not create cudnn handle: CUDNN_STATUS_INTERNAL_ERROR
+2019-04-26 02:31:34.607178: I lingvo/core/ops/record_yielder.cc:313] 0x7fb16bfdd060Basic record yielder exit
+I0426 02:31:35.971426 140410399749888 base_runner.py:236] trainer done (fatal error).
+I0426 02:31:35.982585 140410399749888 base_runner.py:115] trainer exception: cudnn PoolForward launch failed
+	 [[node fprop/librispeech/tower_0_0/enc/conv_L0/max_pool (defined at tmp/lingvo/bazel-bin/lingvo/trainer.runfiles/__main__/lingvo/core/conv_layers_with_time_padding.py:95) ]]
+	 [[add_31_G438]]
+```
+
+## Reference
+- http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html
+- https://docs.bazel.build/versions/master/guide.html
+- https://github.com/tensorflow/tensorflow/issues/24496

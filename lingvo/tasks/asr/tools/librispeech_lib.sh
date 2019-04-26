@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-ROOT=/data/xiaoyubei/datasets/librispeech
+ROOT=/tmp/librispeech
 
 # From:
 # http://www.openslr.org/12/

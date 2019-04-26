@@ -20,7 +20,7 @@ set -eu
 
 mkdir -p "${ROOT}/devtest"
 
-for subset in {dev,test}-{clean,other}; do
+for subset in dev-clean dev-other test-clean test-other; do
   set -x
   bazel-bin/lingvo/tools/create_asr_features \
     --logtostderr \
