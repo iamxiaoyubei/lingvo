@@ -391,6 +391,7 @@ def SessionConfig(soft_placement=True, inline=True):
       graph_options=tf.GraphOptions(
           optimizer_options=tf.OptimizerOptions(
               opt_level=tf.OptimizerOptions.L1, do_function_inlining=inline)))
+  session_config.gpu_options.allow_growth = True
   # Disable layout optimizer which increases GPU memory usage.
   session_config.graph_options.rewrite_options.layout_optimizer = (
       rewriter_config_pb2.RewriterConfig.OFF)
