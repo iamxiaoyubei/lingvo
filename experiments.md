@@ -279,9 +279,10 @@ I0428 02:40:54.464982 139886136911616 trainer.py:520] step:    24 fraction_of_co
 I0428 02:40:58.626229 139886229165824 trainer.py:371] Steps/second: 0.124896, Examples/second: 0.260201
 ```
 
-出现并没有在多张卡中跑，只在一张卡中跑的情况。
+出现并没有利用到多张卡，而仅仅只在一张卡中跑的情况，加上参数--worker_gpus=8即可解决：
 To use GPU, add `--config=cuda` to build command and set `--run_locally=gpu`.
 ```
+bazel build -c opt //lingvo:trainer --config=cuda
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 bazel-bin/lingvo/trainer --run_locally=gpu --mode=sync --model=asr.librispeech.Librispeech960Wpm --logdir=/tmp/librispeech/log --logtostderr --enable_asserts=false --worker_gpus=8
 ```
 
