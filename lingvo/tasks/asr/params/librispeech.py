@@ -62,7 +62,7 @@ class Librispeech960Base(base_model_params.SingleTaskModelParams):
   # data.
   TRAIN_BUCKET_UPPER_BOUNDS = [639, 1062, 1275, 1377, 1449, 1506, 1563, 1710]
   DEVTEST_BUCKET_UPPER_BOUNDS = [639, 1062, 1275, 1377, 1449, 1506, 1563, 3600]
-  BATCH_LIMITS = [4, 2, 2, 2, 2, 2, 2, 2]
+  BATCH_LIMITS = [32, 32, 32, 32, 32, 32, 32, 32]
 
   @classmethod
   def _TFRecordPath(cls, file_pattern):

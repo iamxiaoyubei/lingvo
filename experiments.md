@@ -140,7 +140,8 @@ sh ./lingvo/tasks/asr/tools/librispeech.01.download_train.sh
 ```
 便开始了下载：
 ```
- *** Download Progress Summary as of Wed Apr 24 15:25:23 2019 ***                                      ======================================================================================================
+ *** Download Progress Summary as of Wed Apr 24 15:25:23 2019 ***
+======================================================================================================
 [#7c4ac8 18MiB/5.9GiB(0%) CN:16 DL:304KiB ETA:5h40m20s]
 FILE: /home/dm/Documents/datasets/librispeech/raw/train-clean-100.tar.gz
 ------------------------------------------------------------------------------------------------------
@@ -210,16 +211,78 @@ I0426 02:31:35.982585 140410399749888 base_runner.py:115] trainer exception: cud
 ```
 尝试 https://github.com/tensorflow/tensorflow/issues/24496 方式，无法解决，个人觉得是显存不够，打算把实验迁移到服务器上进行。
 
-服务器上无需sudo run docker的方式：http://www.docker.org.cn/book/install/run-docker-without-sudo-30.html
+服务器上无需sudo run docker的方式：http://www.docker.org.cn/book/install/run-docker-without-sudo-30.html ， 之后就可以无需sudo权限来run实验。
 
-目前已将环境和数据迁移到服务器上
+目前已将环境和数据迁移到服务器上，重新用上面环境配置命令配置好之后，用下面的命令run实验，其中若忘记设置挂载LINGVO_DIR则会出现bazel build无法成功需要in workpace build的问题。若忘记设置挂载LIBRISPEECH_DIR则会找不到数据集。
 ```
 LINGVO_DIR="/home/gongke/xiaoyubei/codes/lingvo"
 LINGVO_DEVICE="gpu"
 LIBRISPEECH_DIR="/home/gongke/xiaoyubei/datasets/librispeech"
 docker run --rm $(test "$LINGVO_DEVICE" = "gpu" && echo "--runtime=nvidia") -it -v ${LINGVO_DIR}:/tmp/lingvo -v ${LIBRISPEECH_DIR}:/tmp/librispeech -v ${HOME}/.gitconfig:/home/${USER}/.gitconfig:ro -p 6006:6006 -p 8888:8888 --name lingvo tensorflow:lingvo bash
 bazel build -c opt //lingvo:trainer
-CUDA_VISIBLE_DEVICES=0,1,2,3 bazel-bin/lingvo/trainer --run_locally=gpu --mode=sync --model=asr.librispeech.Librispeech960Wpm --logdir=/tmp/librispeech/log --logtostderr --enable_asserts=false
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 bazel-bin/lingvo/trainer --run_locally=gpu --mode=sync --model=asr.librispeech.Librispeech960Wpm --logdir=/tmp/librispeech/log --logtostderr --enable_asserts=false
+```
+
+需要修改 librispeech.py line 65的batch size，否则太大还是run不起来。成功run起来结果如图：
+```
+I0428 02:37:36.455261 139886229165824 trainer.py:371] Steps/second: 0.000000, Examples/second: 0.000000
+I0428 02:37:46.467176 139886229165824 trainer.py:371] Steps/second: 0.000000, Examples/second: 0.000000
+I0428 02:37:47.125787 139886136911616 base_runner.py:115] step:     1 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:398.85916 grad_scale_all:0 log_pplx:9.8754921 log_pplx/logits:9.8754921 loss:9.8754921 loss/logits:9.8754921 num_samples_in_batch:2 var_norm/all:1088.4357
+I0428 02:37:55.583883 139886136911616 trainer.py:520] step:     2 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:379.92902 grad_scale_all:0 log_pplx:10.033342 log_pplx/logits:10.033342 loss:10.033342 loss/logits:10.033342 num_samples_in_batch:2 var_norm/all:1088.4357
+I0428 02:37:56.473912 139886229165824 trainer.py:371] Steps/second: 0.199862, Examples/second: 0.399724
+I0428 02:37:56.474525 139886229165824 trainer.py:275] Write summary @2
+I0428 02:38:02.778817 139886136911616 trainer.py:520] step:     3 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:434.77341 grad_scale_all:0 log_pplx:9.9486217 log_pplx/logits:9.9486217 loss:9.9486217 loss/logits:9.9486217 num_samples_in_batch:2 var_norm/all:1088.4357
+I0428 02:38:10.370831 139886136911616 trainer.py:520] step:     4 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:354.99301 grad_scale_all:0 log_pplx:9.9383869 log_pplx/logits:9.9383869 loss:9.9383869 loss/logits:9.9383869 num_samples_in_batch:2 var_norm/all:1088.4357
+2019-04-28 02:38:11.550715: I ./lingvo/core/ops/input_common.h:68] Create RecordProcessor
+2019-04-28 02:38:11.661113: I lingvo/core/ops/input_common.cc:30] Input source weights are empty, fall back to legacy behavior.
+2019-04-28 02:38:11.662980: I lingvo/core/ops/record_yielder.cc:288] 0x7f35bfadfa70 Record yielder start
+2019-04-28 02:38:11.663024: I lingvo/core/ops/record_yielder.cc:290] Randomly seed RecordYielder.
+2019-04-28 02:38:11.663063: I ./lingvo/core/ops/input_common.h:73] Create batcher
+2019-04-28 02:38:11.663112: I lingvo/core/ops/record_yielder.cc:341] Epoch 1 /tmp/librispeech/train/train.tfrecords-*
+I0428 02:38:20.550335 139886136911616 trainer.py:520] step:     5 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:303.15164 grad_scale_all:0 log_pplx:9.7810946 log_pplx/logits:9.7810946 loss:9.7810946 loss/logits:9.7810946 num_samples_in_batch:2 var_norm/all:1088.4357
+I0428 02:38:26.903563 139886136911616 trainer.py:520] step:     6 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:463.33191 grad_scale_all:0 log_pplx:9.9937429 log_pplx/logits:9.9937429 loss:9.9937429 loss/logits:9.9937429 num_samples_in_batch:2 var_norm/all:1088.4357
+I0428 02:38:38.987941 139886136911616 trainer.py:520] step:     7 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:374.92935 grad_scale_all:0 log_pplx:10.035495 log_pplx/logits:10.035495 loss:10.035495 loss/logits:10.035495 num_samples_in_batch:2 var_norm/all:1088.4357
+2019-04-28 02:38:39.017985: I lingvo/core/ops/record_batcher.cc:344] 68 total seconds passed. Total records yielded: 28. Total records skipped: 0
+I0428 02:38:48.481496 139886229165824 trainer.py:284] Write summary done: step 2
+I0428 02:38:48.488065 139886229165824 base_runner.py:115] step:     2, steps/sec: 0.20, examples/sec: 0.40
+I0428 02:38:48.493494 139886229165824 trainer.py:371] Steps/second: 0.112855, Examples/second: 0.225710
+I0428 02:38:49.164124 139886136911616 trainer.py:520] step:     8 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:309.8277 grad_scale_all:0 log_pplx:10.011168 log_pplx/logits:10.011168 loss:10.011168 loss/logits:10.011168 num_samples_in_batch:2 var_norm/all:1088.4357
+I0428 02:38:58.354603 139886136911616 trainer.py:520] step:     9 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:332.31821 grad_scale_all:0 log_pplx:10.066358 log_pplx/logits:10.066358 loss:10.066358 loss/logits:10.066358 num_samples_in_batch:2 var_norm/all:1088.4357
+I0428 02:38:58.535938 139886229165824 trainer.py:371] Steps/second: 0.124880, Examples/second: 0.222010
+I0428 02:39:06.659197 139886136911616 trainer.py:520] step:    10 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:366.88666 grad_scale_all:0 log_pplx:9.7860727 log_pplx/logits:9.7860727 loss:9.7860727 loss/logits:9.7860727 num_samples_in_batch:2 var_norm/all:1088.4357
+I0428 02:39:08.515033 139886229165824 trainer.py:371] Steps/second: 0.121880, Examples/second: 0.243760
+I0428 02:39:11.839998 139886136911616 trainer.py:520] step:    11 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:550.30212 grad_scale_all:0 log_pplx:9.8040724 log_pplx/logits:9.8040724 loss:9.8040724 loss/logits:9.8040724 num_samples_in_batch:2 var_norm/all:1088.4357
+I0428 02:39:18.289273 139886136911616 trainer.py:520] step:    12 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:325.69394 grad_scale_all:0 log_pplx:10.02005 log_pplx/logits:10.02005 loss:10.02005 loss/logits:10.02005 num_samples_in_batch:2 var_norm/all:1088.4357
+I0428 02:39:18.565817 139886229165824 trainer.py:371] Steps/second: 0.130295, Examples/second: 0.238874
+I0428 02:39:23.229195 139886136911616 trainer.py:520] step:    13 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:387.82568 grad_scale_all:0 log_pplx:10.063722 log_pplx/logits:10.063722 loss:10.063722 loss/logits:10.063722 num_samples_in_batch:2 var_norm/all:1088.4357
+I0428 02:39:28.536034 139886229165824 trainer.py:371] Steps/second: 0.127365, Examples/second: 0.254730
+I0428 02:39:32.638768 139886136911616 trainer.py:520] step:    14 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:381.58237 grad_scale_all:0 log_pplx:9.8603516 log_pplx/logits:9.8603516 loss:9.8603516 loss/logits:9.8603516 num_samples_in_batch:2 var_norm/all:1088.4357
+I0428 02:39:38.549165 139886229165824 trainer.py:371] Steps/second: 0.124909, Examples/second: 0.249817
+I0428 02:39:41.181643 139886136911616 trainer.py:520] step:    15 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:304.54611 grad_scale_all:0 log_pplx:9.9584513 log_pplx/logits:9.9584513 loss:9.9584513 loss/logits:9.9584513 num_samples_in_batch:2 var_norm/all:1088.4357
+I0428 02:39:48.559518 139886229165824 trainer.py:371] Steps/second: 0.122858, Examples/second: 0.245716
+I0428 02:39:50.634742 139886136911616 trainer.py:520] step:    16 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:364.39774 grad_scale_all:0 log_pplx:10.009266 log_pplx/logits:10.009266 loss:10.009266 loss/logits:10.009266 num_samples_in_batch:2 var_norm/all:1088.4357
+I0428 02:39:58.568286 139886229165824 trainer.py:371] Steps/second: 0.121119, Examples/second: 0.242239
+I0428 02:39:59.991051 139886136911616 trainer.py:520] step:    17 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:363.9465 grad_scale_all:0 log_pplx:9.9929256 log_pplx/logits:9.9929256 loss:9.9929256 loss/logits:9.9929256 num_samples_in_batch:2 var_norm/all:1088.4357
+I0428 02:40:08.580627 139886229165824 trainer.py:371] Steps/second: 0.119623, Examples/second: 0.239245
+I0428 02:40:08.798882 139886136911616 trainer.py:520] step:    18 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:422.88327 grad_scale_all:0 log_pplx:9.7943659 log_pplx/logits:9.7943659 loss:9.7943659 loss/logits:9.7943659 num_samples_in_batch:2 var_norm/all:1088.4357
+I0428 02:40:17.796449 139886136911616 trainer.py:520] step:    19 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:522.08038 grad_scale_all:0 log_pplx:9.9491949 log_pplx/logits:9.9491949 loss:9.9491949 loss/logits:9.9491949 num_samples_in_batch:2 var_norm/all:1088.4357
+I0428 02:40:18.584604 139886229165824 trainer.py:371] Steps/second: 0.124903, Examples/second: 0.249807
+I0428 02:40:26.315630 139886136911616 trainer.py:520] step:    20 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:281.60037 grad_scale_all:0 log_pplx:9.8712187 log_pplx/logits:9.8712187 loss:9.8712187 loss/logits:9.8712187 num_samples_in_batch:2 var_norm/all:1088.4357
+I0428 02:40:28.596860 139886229165824 trainer.py:371] Steps/second: 0.123358, Examples/second: 0.259052
+I0428 02:40:30.005242 139886136911616 trainer.py:520] step:    21 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:528.17944 grad_scale_all:0 log_pplx:10.01756 log_pplx/logits:10.01756 loss:10.01756 loss/logits:10.01756 num_samples_in_batch:4 var_norm/all:1088.4357
+I0428 02:40:38.083539 139886136911616 trainer.py:520] step:    22 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:306.41714 grad_scale_all:0 log_pplx:9.9797964 log_pplx/logits:9.9797964 loss:9.9797964 loss/logits:9.9797964 num_samples_in_batch:2 var_norm/all:1088.4357
+I0428 02:40:38.605829 139886229165824 trainer.py:371] Steps/second: 0.127804, Examples/second: 0.267226
+I0428 02:40:48.617949 139886229165824 trainer.py:371] Steps/second: 0.120779, Examples/second: 0.252538
+I0428 02:40:48.996296 139886136911616 trainer.py:520] step:    23 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:360.05887 grad_scale_all:0 log_pplx:9.9907274 log_pplx/logits:9.9907274 loss:9.9907274 loss/logits:9.9907274 num_samples_in_batch:2 var_norm/all:1088.4357
+2019-04-28 02:40:49.010331: I lingvo/core/ops/record_batcher.cc:344] 198 total seconds passed. Total records yielded: 61. Total records skipped: 0
+I0428 02:40:54.464982 139886136911616 trainer.py:520] step:    24 fraction_of_correct_next_step_preds:0 fraction_of_correct_next_step_preds/logits:0 grad_norm/all:418.73044 grad_scale_all:0 log_pplx:9.9715481 log_pplx/logits:9.9715481 loss:9.9715481 loss/logits:9.9715481 num_samples_in_batch:2 var_norm/all:1088.4357
+I0428 02:40:58.626229 139886229165824 trainer.py:371] Steps/second: 0.124896, Examples/second: 0.260201
+```
+
+出现并没有在多张卡中跑，只在一张卡中跑的情况。
+To use GPU, add `--config=cuda` to build command and set `--run_locally=gpu`.
+```
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 bazel-bin/lingvo/trainer --run_locally=gpu --mode=sync --model=asr.librispeech.Librispeech960Wpm --logdir=/tmp/librispeech/log --logtostderr --enable_asserts=false --worker_gpus=8
 ```
 
 ## Reference
