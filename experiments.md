@@ -208,6 +208,19 @@ I0426 02:31:35.982585 140410399749888 base_runner.py:115] trainer exception: cud
 	 [[node fprop/librispeech/tower_0_0/enc/conv_L0/max_pool (defined at tmp/lingvo/bazel-bin/lingvo/trainer.runfiles/__main__/lingvo/core/conv_layers_with_time_padding.py:95) ]]
 	 [[add_31_G438]]
 ```
+尝试 https://github.com/tensorflow/tensorflow/issues/24496 方式，无法解决，个人觉得是显存不够，打算把实验迁移到服务器上进行。
+
+服务器上无需sudo run docker的方式：http://www.docker.org.cn/book/install/run-docker-without-sudo-30.html
+
+目前已将环境和数据迁移到服务器上
+```
+LINGVO_DIR="/home/gongke/xiaoyubei/codes/lingvo"
+LINGVO_DEVICE="gpu"
+LIBRISPEECH_DIR="/home/gongke/xiaoyubei/datasets/librispeech"
+docker run --rm $(test "$LINGVO_DEVICE" = "gpu" && echo "--runtime=nvidia") -it -v ${LINGVO_DIR}:/tmp/lingvo -v ${LIBRISPEECH_DIR}:/tmp/librispeech -v ${HOME}/.gitconfig:/home/${USER}/.gitconfig:ro -p 6006:6006 -p 8888:8888 --name lingvo tensorflow:lingvo bash
+bazel build -c opt //lingvo:trainer
+CUDA_VISIBLE_DEVICES=0,1,2,3 bazel-bin/lingvo/trainer --run_locally=gpu --mode=sync --model=asr.librispeech.Librispeech960Wpm --logdir=/tmp/librispeech/log --logtostderr --enable_asserts=false
+```
 
 ## Reference
 - http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html
