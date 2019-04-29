@@ -130,6 +130,7 @@ There were tests whose specified size is too big. Use the --test_verbose_timeout
 root@8e094fbc50c3:/tmp/lingvo# 
 ```
 ## librispeech数据集下载与处理
+### 下载数据集
 代码中给出了下载和处理librispeech的scripts在./lingvo/tasks/asr/tools/中，首先要下载aria2下载文件工具：
 ```
 sudo apt-get install aria2
@@ -173,7 +174,7 @@ sh ./lingvo/tasks/asr/tools/librispeech.04.parameterize_devtest.sh
 处理结束会生成110.6GB的train文件和2.4GB的devtest文件
 
 
-## 开始训练
+## 训练模型
 ```
 root@d4bff1951ef0:/tmp/lingvo# bazel build -c opt //lingvo:trainer
 Starting local Bazel server and connecting to it...
@@ -279,11 +280,18 @@ I0428 02:40:54.464982 139886136911616 trainer.py:520] step:    24 fraction_of_co
 I0428 02:40:58.626229 139886229165824 trainer.py:371] Steps/second: 0.124896, Examples/second: 0.260201
 ```
 
-出现并没有利用到多张卡，而仅仅只在一张卡中跑的情况，加上参数--worker_gpus=8即可解决：
+出现并没有利用到多张卡，而仅仅只在一张卡中跑的情况，目前加上参数--worker_gpus=8即可解决：
 To use GPU, add `--config=cuda` to build command and set `--run_locally=gpu`.
 ```
 bazel build -c opt //lingvo:trainer --config=cuda
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 bazel-bin/lingvo/trainer --run_locally=gpu --mode=sync --model=asr.librispeech.Librispeech960Wpm --logdir=/tmp/librispeech/log --logtostderr --enable_asserts=false --worker_gpus=8
+```
+
+### tensorboard查看训练情况
+服务器无法访问tensorboard开启的网站，出现unreachable问题，需要将events文件传到本地查看：
+```
+scp gongke@192.168.68.51:/home/gongke/xiaoyubei/datasets/librispeech/log/train/events.* /home/dm/Documents/tmp/
+tensorboard --logdir .
 ```
 
 ## Reference
