@@ -1,18 +1,3 @@
-# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-"""Punctuator input generator."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -40,15 +25,12 @@ class PunctuatorInput(base_input_generator.BaseSequenceInputGenerator):
 
   def _ProcessLine(self, line):
     """A single-text-line processor.
-
     Gets a string tensor representing a line of text that have been read from
     the input file, and splits it to graphemes (characters).
     We use original characters as the target labels, and the lowercased and
     punctuation-removed characters as the source labels.
-
     Args:
       line: a 1D string tensor.
-
     Returns:
       A list of tensors, in the expected order by __init__.
     """
@@ -86,10 +68,8 @@ class PunctuatorInput(base_input_generator.BaseSequenceInputGenerator):
 
   def _DataSourceFromFilePattern(self, file_pattern):
     """Create the input processing op.
-
     Args:
       file_pattern: The file pattern to use as input.
-
     Returns:
       an operation that when executed, calls `_ProcessLine` on a line read
     from `file_pattern`.

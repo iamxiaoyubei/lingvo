@@ -64,7 +64,7 @@ def _MakeInt64Feature(value):
 def _MakeFloatFeature(value):
   return tf.train.Feature(float_list=tf.train.FloatList(value=value))
 
-
+# A train feature format: uttid, transcipts, log mel frame
 def _MakeTfExample(uttid, frames, text):
   flat_frames = frames.flatten()
   feature = {
@@ -74,7 +74,7 @@ def _MakeTfExample(uttid, frames, text):
   }
   return tf.train.Example(features=tf.train.Features(feature=feature))
 
-
+# from .tar.gz Read All utterances txt from ***.trans.txt
 def _ReadTranscriptions():
   """Read all transcription files from the tarball.
 
@@ -112,9 +112,9 @@ def _ReadTranscriptions():
       u += 1
     tf.logging.info('[%s] = %d utterances', key, u)
     f.close()
-  return trans
+  return trans # trans[utterance id]=utterance txt
 
-
+# write all utterance to ***.txt according to utterance_id seq
 def _DumpTranscripts():
   trans = _ReadTranscriptions()
   with open(FLAGS.transcripts_filepath, 'w') as f:
@@ -160,7 +160,7 @@ def _SelectRandomShard(files):
   subshard = random.randint(0, len(files) - 1)
   return files[subshard]
 
-
+# From audio(.flac) and transcript(.trans,txt) generate train feature(uttid, frames, transcript)
 def _CreateAsrFeatures():
   # First pass: extract transcription files.
   if os.path.exists(FLAGS.transcripts_filepath):

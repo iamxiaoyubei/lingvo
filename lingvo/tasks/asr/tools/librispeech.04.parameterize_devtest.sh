@@ -19,7 +19,7 @@ set -eu
 . ./lingvo/tasks/asr/tools/librispeech_lib.sh
 
 mkdir -p "${ROOT}/devtest"
-
+# only need feature files
 for subset in dev-clean dev-other test-clean test-other; do
   set -x
   bazel-bin/lingvo/tools/create_asr_features \

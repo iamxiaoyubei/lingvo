@@ -60,7 +60,7 @@ class Librispeech960Base(base_model_params.SingleTaskModelParams):
 
   # Setting the last training bucket to 1710 excludes only ~0.1% of the training
   # data.
-  TRAIN_BUCKET_UPPER_BOUNDS = [639, 1062, 1275, 1377, 1449, 1506, 1563, 1710]
+  TRAIN_BUCKET_UPPER_BOUNDS = [639, 1062, 1275, 1377, 1449, 1506, 1563, 1710] # it seems like different duration to different bucket ->input-generator line58
   DEVTEST_BUCKET_UPPER_BOUNDS = [639, 1062, 1275, 1377, 1449, 1506, 1563, 3600]
   BATCH_LIMITS = [48, 24, 24, 24, 24, 24, 24, 24]
 
@@ -170,7 +170,7 @@ class Librispeech960Base(base_model_params.SingleTaskModelParams):
 
     # Use variational weight noise to prevent overfitting.
     p.vn.global_vn = True
-    p.train.vn_std = 0.075
+    p.train.vn_std = 0.025
     p.train.vn_start_step = 20000
 
     return p

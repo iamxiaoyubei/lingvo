@@ -294,6 +294,11 @@ scp gongke@192.168.68.51:/home/gongke/xiaoyubei/datasets/librispeech/log/train/e
 tensorboard --logdir .
 ```
 
+[] standard_vdn
+[] inference
+[] train
+[] aistation
+
 ## Reference
 - http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html
 - https://docs.bazel.build/versions/master/guide.html
