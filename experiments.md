@@ -441,4 +441,3 @@ Using checkpoint /tmp/librispeech/log/train/ckpt-00019617
 - https://github.com/tensorflow/lingvo/issues/13
 - https://github.com/tensorflow/lingvo/blob/master/codelabs/introduction.ipynb
 - https://github.com/tensorflow/lingvo/tree/master/lingvo/tasks/mt
-- https://tensorflow.github.io/lingvo/index.html
