@@ -6,7 +6,7 @@
 
 之后，按照README说明配置docker:
 ```
-LINGVO_DIR="/home/dm/Documents/codes/lingvo"
+LINGVO_DIR="/data/xiaoyubei/codes/lingvo"
 LINGVO_DEVICE="gpu"
 sudo docker build --tag tensorflow:lingvo $(test "$LINGVO_DEVICE" = "gpu" && echo "--build-arg base_image=nvidia/cuda:10.0-cudnn7-runtime-ubuntu16.04") - < ${LINGVO_DIR}/docker/dev.dockerfile
 ```
@@ -294,12 +294,151 @@ scp gongke@192.168.68.51:/home/gongke/xiaoyubei/datasets/librispeech/log/train/e
 tensorboard --logdir .
 ```
 
-[] standard_vdn
-[] inference
-[] train
-[] aistation
+### 训练出现的问题
+在20Kstep时，loss本来训练到0.06左右，突然上升至1，通过查阅发现是variational noise的问题，如下issue：
+https://github.com/tensorflow/lingvo/issues/13
+
+将librispeech.py line 173中的vn_standard降低一点尝试改善
+
+### Model Inference
+在lingvo根目录下：
+```
+bazel run -c opt //lingvo:ipython_kernel
+```
+或者将librispeech.py中line265改成
+```
+  WPM_SYMBOL_TABLE_FILEPATH = (
+      '/tmp/lingvo/lingvo/tasks/asr/wpm_16k_librispeech.vocab')
+```
+否则在之后会出现`NotFoundError: lingvo/tasks/asr/wpm_16k_librispeech.vocab; No such file or directory`的错误
+
+之后在jupyter notebook的根目录下创建inference.ipynb，输入如下inference代码：
+```
+import tensorflow as tf
+with open('/tmp/librispeech/arctic_a0002.wav') as f:
+    read_data = f.read()
+
+from lingvo import model_imports
+from lingvo import model_registry
+from lingvo.core import inference_graph_exporter
+from lingvo.core import predictor
+from lingvo.core.ops.hyps_pb2 import Hypothesis
+checkpoint = tf.train.latest_checkpoint('/tmp/librispeech/log/train')
+print('Using checkpoint %s' % checkpoint)
+
+# Run inference
+params = model_registry.GetParams('asr.librispeech.Librispeech960Wpm', 'Test')
+inference_graph = inference_graph_exporter.InferenceGraphExporter.Export(params)
+pred = predictor.Predictor(inference_graph, checkpoint=checkpoint, device_type='cpu')
+hyps, src_frames, en_frames, scores = pred.Run(['hypotheses', 'src_frames', 'encoder_frames', 'scores'], wav=read_data)
+print(hyps)
+print(src_frames)
+print(en_frames)
+print(scores)
+```
+可fetch和feed的值：
+Available keys: ['hypotheses', 'src_frames', 'encoder_frames', 'scores']"
+
+Available kwargs:\n             ['wav']"
+
+同时必须要用python自带的read_data读取文件，不能用其他包读取waveform，然后直接feed bytefile，关于inference feed&fetch参见”inference function in /tasks/asr/model.py“
+
+得到结果：
+```
+Using checkpoint /tmp/librispeech/log/train/ckpt-00019617
+[['not at this particular case tom apologise whit more'
+  'not at this particular case tom apologized whit more'
+  'not at this particular case tom apologised whit more'
+  'not at this particular case tom apologise wet more'
+  'not at this particular case tom apologies whit more'
+  'not at this particular case tom apologised wet more'
+  'not at this particular case tom apologised whit moore'
+  'not at this particular case tom apologizing']]
+[[[[3.8814113]
+   [4.70007  ]
+   [4.7709765]
+   ...
+   [7.0900693]
+   [7.419367 ]
+   [7.3473206]]
+
+  [[4.87256  ]
+   [4.780118 ]
+   [4.316139 ]
+   ...
+   [6.676336 ]
+   [7.1873636]
+   [6.9905477]]
+
+  [[4.522503 ]
+   [4.8882885]
+   [4.386055 ]
+   ...
+   [6.823723 ]
+   [7.182853 ]
+   [7.3419056]]
+
+  ...
+
+  [[4.939454 ]
+   [4.6596055]
+   [4.743568 ]
+   ...
+   [7.589517 ]
+   [7.509996 ]
+   [7.211669 ]]
+
+  [[4.5254383]
+   [4.335422 ]
+   [4.676789 ]
+   ...
+   [7.3858976]
+   [7.123153 ]
+   [7.2415466]]
+
+  [[4.728032 ]
+   [3.9538307]
+   [3.7164648]
+   ...
+   [7.249352 ]
+   [7.3127604]
+   [6.975508 ]]]]
+[[[ 1.68075842e-09 -7.73070410e-12 -4.67900099e-06 ... -1.59423719e-18
+   -4.81518796e-13  4.24137761e-06]]
+
+ [[ 3.25638544e-11 -8.65923381e-13 -1.76172114e-06 ... -1.20889330e-14
+   -0.00000000e+00  5.79266234e-05]]
+
+ [[ 5.16644540e-11 -2.79574280e-12 -5.46445472e-06 ... -1.76007653e-09
+   -0.00000000e+00  1.29965262e-03]]
+
+ ...
+
+ [[ 1.01802915e-11 -0.00000000e+00 -8.56795668e-06 ...  0.00000000e+00
+    0.00000000e+00  0.00000000e+00]]
+
+ [[ 0.00000000e+00  0.00000000e+00  0.00000000e+00 ...  0.00000000e+00
+    0.00000000e+00  0.00000000e+00]]
+
+ [[ 0.00000000e+00  0.00000000e+00  0.00000000e+00 ...  0.00000000e+00
+    0.00000000e+00  0.00000000e+00]]]
+[[ -1.5081232  -1.5386827  -2.1550722  -3.6003406  -3.8535016  -4.05903
+   -4.19409   -10.314721 ]]
+```
+
+- [x] standard_vdn
+- [x] inference
+- [x] train
+- [ ] aistation
+- [ ] 代码学习
+- [ ] 论文学习
+
 
 ## Reference
 - http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html
 - https://docs.bazel.build/versions/master/guide.html
 - https://github.com/tensorflow/tensorflow/issues/24496
+- https://github.com/tensorflow/lingvo/issues/13
+- https://github.com/tensorflow/lingvo/blob/master/codelabs/introduction.ipynb
+- https://github.com/tensorflow/lingvo/tree/master/lingvo/tasks/mt
+- https://tensorflow.github.io/lingvo/index.html
