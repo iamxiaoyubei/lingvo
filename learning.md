@@ -8,7 +8,7 @@
 
 asr目录下的tools是下载和处理数据集数据的script和计算WER的一个单独模块。
 
-![LINGVO目录结构]()
+![LINGVO目录结构](https://raw.githubusercontent.com/iamxiaoyubei/lingvo/master/docs/pic/Screenshot%20from%202019-04-29%2019-30-24.png)
 
 
 ## 数据集处理
@@ -61,7 +61,7 @@ clean是指包含的是“clean”音频的数据集，other是指可能并不�
 
 相关处理代码见/lingvo/tasks/asr/tools/librispeech.** .parameterize **.sh和/lingvo/tools/create_asr_features.py。
 
-![处理后数据集]()
+![处理后数据集](https://raw.githubusercontent.com/iamxiaoyubei/lingvo/master/docs/pic/image2019-4-29_20-5-7.png)
 
 ## 训练参数
 参数从librispeech.py开始追溯修改。

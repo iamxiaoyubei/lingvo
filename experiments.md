@@ -287,7 +287,7 @@ bazel build -c opt //lingvo:trainer --config=cuda
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 bazel-bin/lingvo/trainer --run_locally=gpu --mode=sync --model=asr.librispeech.Librispeech960Wpm --logdir=/tmp/librispeech/log --logtostderr --enable_asserts=false --worker_gpus=8
 ```
 
-![多卡训练]()
+![多卡训练](https://raw.githubusercontent.com/iamxiaoyubei/lingvo/master/docs/pic/Screenshot%20from%202019-04-28%2014-22-34.png)
 
 ### tensorboard查看训练情况
 服务器无法访问tensorboard开启的网站，出现unreachable问题，需要将events文件传到本地查看：
